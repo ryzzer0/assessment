@@ -2,11 +2,12 @@ import { Resolver, Mutation, Arg, Ctx, UseMiddleware } from "type-graphql";
 import * as bcrypt from "bcryptjs";
 import * as jwt from "jsonwebtoken";
 import { ContextType } from "../types";
-import { User } from "./User";
+import { User } from "../models/User";
 import { Length, IsEmail, Matches, validate } from "class-validator";
 import { Field, InputType } from "type-graphql";
 import { isAuth } from "../middleware/isAuth";
 
+// Input type for signing up a user
 @InputType()
 class SignupInput {
   @Field()
@@ -25,6 +26,7 @@ class SignupInput {
   password: string;
 }
 
+// Input type for changing a user's password
 @InputType()
 class ChangePasswordInput {
   @Field()
@@ -43,6 +45,7 @@ class ChangePasswordInput {
   newPassword: string;
 }
 
+// Custom error class for when a user is not found
 class UserNotFoundError extends Error {
     constructor() {
       super("No user found");
@@ -52,6 +55,7 @@ class UserNotFoundError extends Error {
 
 @Resolver(User)
 export class UserResolver {
+  // Mutation for signing up a user
   @Mutation(() => User)
   async signup(@Arg("data") data: SignupInput, @Ctx() ctx: ContextType) {
     const errors = await validate(data);
@@ -73,6 +77,7 @@ export class UserResolver {
     throw new Error("Error creating user");
   }
 
+  // Mutation for logging in a user
   @Mutation(() => String)
   async login(
     @Arg("email") email: string,
@@ -89,6 +94,7 @@ export class UserResolver {
     return token;
   }
 
+  // Mutation for changing a user's password
   @Mutation(() => User)
   @UseMiddleware(isAuth)
   async changePassword(@Arg("data") data: ChangePasswordInput, @Ctx() ctx: ContextType) {

@@ -8,11 +8,12 @@ import {
   UseMiddleware,
 } from "type-graphql";
 import { ContextType } from "../types";
-import { isAuth } from "../middleware/isAuth"; // This is a middleware function you'll need to create
-import { Movie } from "./Movie";
+import { isAuth } from "../middleware/isAuth";
+import { Movie } from "../models/Movie";
 import { Length, IsEmail, Matches, validate } from "class-validator";
 import { Field, InputType } from "type-graphql";
 
+// Input type for creating a movie
 @InputType()
 class CreateMovieInput {
   @Field()
@@ -31,6 +32,7 @@ class CreateMovieInput {
   releaseDate: string;
 }
 
+// Custom error class for when a movie is not found
 class MovieNotFoundError extends Error {
   constructor() {
     super("Movie not found");
@@ -40,6 +42,7 @@ class MovieNotFoundError extends Error {
 
 @Resolver(Movie)
 export class MovieResolver {
+  // Query for getting multiple movies with optional pagination, sorting, and searching
   @Query(() => [Movie])
   async movies(
     @Arg("skip", () => Int, { nullable: true }) skip: number,
@@ -66,6 +69,7 @@ export class MovieResolver {
     });
   }
 
+  // Query for getting a single movie by its ID
   @Query(() => Movie)
   async movie(@Arg("id", () => Int) id: number, @Ctx() ctx: ContextType) {
     const movie = await ctx.prisma.movie.findUnique({ where: { id } });
@@ -73,6 +77,7 @@ export class MovieResolver {
     return movie;
   }
 
+  // Mutation for creating a new movie
   @Mutation(() => Movie)
   @UseMiddleware(isAuth) // This middleware checks if the user is authenticated
   async createMovie(
@@ -97,6 +102,7 @@ export class MovieResolver {
     return movie;
   }
 
+  // Mutation for updating an existing movie
   @Mutation(() => Movie)
   @UseMiddleware(isAuth)
   async updateMovie(
@@ -122,6 +128,7 @@ export class MovieResolver {
     });
   }
 
+  // Mutation for deleting a movie
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
   async deleteMovie(@Arg("id", () => Int) id: number, @Ctx() ctx: ContextType) {
