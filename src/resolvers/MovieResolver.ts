@@ -13,7 +13,6 @@ import { Movie } from "./Movie";
 import { Length, IsEmail, Matches, validate } from "class-validator";
 import { Field, InputType } from "type-graphql";
 
-
 @InputType()
 class CreateMovieInput {
   @Field()
@@ -33,11 +32,11 @@ class CreateMovieInput {
 }
 
 class MovieNotFoundError extends Error {
-    constructor() {
-      super("Movie not found");
-      this.name = "MovieNotFoundError";
-    }
+  constructor() {
+    super("Movie not found");
+    this.name = "MovieNotFoundError";
   }
+}
 
 @Resolver(Movie)
 export class MovieResolver {
@@ -49,7 +48,6 @@ export class MovieResolver {
     @Arg("search", { nullable: true }) search: string,
     @Ctx() ctx: ContextType
   ) {
-
     const finalSkip = skip ?? 0;
     const finalTake = take ?? 10;
 
@@ -76,28 +74,28 @@ export class MovieResolver {
   }
 
   @Mutation(() => Movie)
-@UseMiddleware(isAuth) // This middleware checks if the user is authenticated
-async createMovie(
-  @Arg("data") data: CreateMovieInput,
-  @Ctx() ctx: ContextType
-) {
-  const errors = await validate(data);
-  if (errors.length > 0) {
-    throw new Error("Validation failed!");
-  }
+  @UseMiddleware(isAuth) // This middleware checks if the user is authenticated
+  async createMovie(
+    @Arg("data") data: CreateMovieInput,
+    @Ctx() ctx: ContextType
+  ) {
+    const errors = await validate(data);
+    if (errors.length > 0) {
+      throw new Error("Validation failed!");
+    }
 
-  const userId = ctx.payload.userId;
-  const movie = await ctx.prisma.movie.create({
-    data: {
-      movieName: data.movieName,
-      description: data.description,
-      directorName: data.directorName,
-      releaseDate: new Date(data.releaseDate),
-      userId,
-    },
-  });
-  return movie;
-}
+    const userId = ctx.payload.userId;
+    const movie = await ctx.prisma.movie.create({
+      data: {
+        movieName: data.movieName,
+        description: data.description,
+        directorName: data.directorName,
+        releaseDate: new Date(data.releaseDate),
+        userId,
+      },
+    });
+    return movie;
+  }
 
   @Mutation(() => Movie)
   @UseMiddleware(isAuth)
