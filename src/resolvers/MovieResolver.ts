@@ -10,6 +10,27 @@ import {
 import { ContextType } from "../types";
 import { isAuth } from "../middleware/isAuth"; // This is a middleware function you'll need to create
 import { Movie } from "./Movie";
+import { Length, IsEmail, Matches, validate } from "class-validator";
+import { Field, InputType } from "type-graphql";
+
+
+@InputType()
+class CreateMovieInput {
+  @Field()
+  @Length(1, 100)
+  movieName: string;
+
+  @Field()
+  @Length(1, 500)
+  description: string;
+
+  @Field()
+  @Length(1, 100)
+  directorName: string;
+
+  @Field()
+  releaseDate: string;
+}
 
 class MovieNotFoundError extends Error {
     constructor() {
@@ -55,26 +76,28 @@ export class MovieResolver {
   }
 
   @Mutation(() => Movie)
-  @UseMiddleware(isAuth) // This middleware checks if the user is authenticated
-  async createMovie(
-    @Arg("movieName") movieName: string,
-    @Arg("description") description: string,
-    @Arg("directorName") directorName: string,
-    @Arg("releaseDate") releaseDate: string,
-    @Ctx() ctx: ContextType
-  ) {
-    const userId = ctx.payload.userId;
-    const movie = await ctx.prisma.movie.create({
-      data: {
-        movieName,
-        description,
-        directorName,
-        releaseDate: new Date(releaseDate),
-        userId,
-      },
-    });
-    return movie;
+@UseMiddleware(isAuth) // This middleware checks if the user is authenticated
+async createMovie(
+  @Arg("data") data: CreateMovieInput,
+  @Ctx() ctx: ContextType
+) {
+  const errors = await validate(data);
+  if (errors.length > 0) {
+    throw new Error("Validation failed!");
   }
+
+  const userId = ctx.payload.userId;
+  const movie = await ctx.prisma.movie.create({
+    data: {
+      movieName: data.movieName,
+      description: data.description,
+      directorName: data.directorName,
+      releaseDate: new Date(data.releaseDate),
+      userId,
+    },
+  });
+  return movie;
+}
 
   @Mutation(() => Movie)
   @UseMiddleware(isAuth)

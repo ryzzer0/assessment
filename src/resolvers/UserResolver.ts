@@ -3,7 +3,7 @@ import * as bcrypt from "bcryptjs";
 import * as jwt from "jsonwebtoken";
 import { ContextType } from "../types";
 import { User } from "./User";
-import { Length, IsEmail, Matches } from "class-validator";
+import { Length, IsEmail, Matches, validate } from "class-validator";
 import { Field, InputType } from "type-graphql";
 import { isAuth } from "../middleware/isAuth";
 
@@ -18,10 +18,10 @@ class SignupInput {
   email: string;
 
   @Field()
-  @Length(8, 50)
-  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
+  @Matches(/^(?=.*\d)(?=.*\W+)(?=.*[A-Z])(?=.*[a-z]).*$/, {
     message: "Password too weak",
   })
+  @Length(8, 50)
   password: string;
 }
 
@@ -37,7 +37,7 @@ class ChangePasswordInput {
 
   @Field()
   @Length(8, 50)
-  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
+  @Matches(/^(?=.*\d)(?=.*\W+)(?=.*[A-Z])(?=.*[a-z]).*$/, {
     message: 'Password too weak',
   })
   newPassword: string;
@@ -54,6 +54,11 @@ class UserNotFoundError extends Error {
 export class UserResolver {
   @Mutation(() => User)
   async signup(@Arg("data") data: SignupInput, @Ctx() ctx: ContextType) {
+    const errors = await validate(data);
+    if (errors.length > 0) {
+      throw new Error("Validation failed!");
+    }
+
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const user = await ctx.prisma.user.create({
       data: {
@@ -87,6 +92,11 @@ export class UserResolver {
   @Mutation(() => User)
   @UseMiddleware(isAuth)
   async changePassword(@Arg("data") data: ChangePasswordInput, @Ctx() ctx: ContextType) {
+    const errors = await validate(data);
+    if (errors.length > 0) {
+      throw new Error("Validation failed!");
+    }
+
     const user = await ctx.prisma.user.findUnique({ where: { email: data.email } });
     if (!user) throw new UserNotFoundError();
 
